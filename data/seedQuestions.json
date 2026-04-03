@@ -1,0 +1,22 @@
+[
+  { "text": "Is it accepted to smoke at age 17?", "is18Plus": true },
+  { "text": "Is it accepted to skip school for mental health days?", "is18Plus": false },
+  { "text": "Is it accepted to eat dessert before dinner?", "is18Plus": false },
+  { "text": "Is it accepted to wear pajamas to school?", "is18Plus": false },
+  { "text": "Is it accepted to stay up past midnight on school nights?", "is18Plus": false },
+  { "text": "Is it accepted to use your phone during family dinner?", "is18Plus": false },
+  { "text": "Is it accepted to have a boyfriend/girlfriend at age 14?", "is18Plus": false },
+  { "text": "Is it accepted to dye your hair bright colors as a teenager?", "is18Plus": false },
+  { "text": "Is it accepted to get a tattoo at age 16 with parental consent?", "is18Plus": false },
+  { "text": "Is it accepted to drink alcohol at family gatherings as a minor?", "is18Plus": true },
+  { "text": "Is it accepted to curse in front of your parents?", "is18Plus": false },
+  { "text": "Is it accepted to have social media accounts before age 13?", "is18Plus": false },
+  { "text": "Is it accepted to play video games for more than 4 hours a day?", "is18Plus": false },
+  { "text": "Is it accepted to not share your food with friends?", "is18Plus": false },
+  { "text": "Is it accepted to ghost someone who likes you?", "is18Plus": false },
+  { "text": "Is it accepted to tell white lies to your parents?", "is18Plus": false },
+  { "text": "Is it accepted to copy homework from a friend?", "is18Plus": false },
+  { "text": "Is it accepted to watch R-rated movies at age 15?", "is18Plus": true },
+  { "text": "Is it accepted to have an energy drink every day?", "is18Plus": false },
+  { "text": "Is it accepted to spend all your allowance on one thing?", "is18Plus": false }
+]
