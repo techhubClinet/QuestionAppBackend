@@ -2,7 +2,7 @@ const express = require('express');
 const { body } = require('express-validator');
 const router = express.Router();
 const questionController = require('../controllers/questionController');
-const { optionalAuth } = require('../middleware/auth');
+const { protect, optionalAuth } = require('../middleware/auth');
 
 router.get('/random', optionalAuth, questionController.getRandomQuestions);
 
