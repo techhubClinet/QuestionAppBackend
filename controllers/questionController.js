@@ -11,6 +11,15 @@ function parseIs18Plus(value) {
   return false;
 }
 
+function getGuestId(req) {
+  const raw = req.headers['x-guest-id'];
+  const guestId = Array.isArray(raw) ? raw[0] : raw;
+  if (!guestId) return null;
+  const normalized = String(guestId).trim();
+  if (!normalized || normalized.length > 128) return null;
+  return normalized;
+}
+
 exports.getRandomQuestions = async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 3;
@@ -93,6 +102,7 @@ exports.createQuestion = async (req, res) => {
 
     const text = String(req.body.text || '').trim();
     const is18Plus = parseIs18Plus(req.body.is18Plus);
+    const guestId = getGuestId(req);
 
     const existingApproved = await Question.findOne({
       text: { $regex: `^${escapeRegex(text)}$`, $options: 'i' },
@@ -106,7 +116,8 @@ exports.createQuestion = async (req, res) => {
     const question = await Question.create({
       text,
       is18Plus,
-      createdBy: req.user._id,
+      createdBy: req.user?._id,
+      createdByGuestId: req.user ? undefined : guestId,
       approved: false,
       acceptVotes: 1,
       rejectVotes: 1
@@ -120,8 +131,18 @@ exports.createQuestion = async (req, res) => {
 
 exports.getMyQuestions = async (req, res) => {
   try {
-    const questions = await Question.find({ createdBy: req.user._id })
-      .sort({ createdAt: -1 });
+    const guestId = getGuestId(req);
+    let filter = null;
+
+    if (req.user) {
+      filter = { createdBy: req.user._id };
+    } else if (guestId) {
+      filter = { createdByGuestId: guestId };
+    } else {
+      return res.status(400).json({ message: 'Missing user session or guest id' });
+    }
+
+    const questions = await Question.find(filter).sort({ createdAt: -1 });
 
     res.json(questions);
   } catch (error) {
@@ -138,7 +159,7 @@ exports.getQuestionById = async (req, res) => {
     }
 
     const isOwner =
-      req.user && question.createdBy.toString() === req.user._id.toString();
+      req.user && question.createdBy && question.createdBy.toString() === req.user._id.toString();
     const isAdminUser = req.user && req.user.isAdmin;
 
     if (!question.approved && !isOwner && !isAdminUser) {

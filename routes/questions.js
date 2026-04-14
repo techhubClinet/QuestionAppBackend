@@ -2,19 +2,19 @@ const express = require('express');
 const { body } = require('express-validator');
 const router = express.Router();
 const questionController = require('../controllers/questionController');
-const { protect, optionalAuth } = require('../middleware/auth');
+const { optionalAuth } = require('../middleware/auth');
 
 router.get('/random', optionalAuth, questionController.getRandomQuestions);
 
 router.get('/search', optionalAuth, questionController.searchQuestions);
 
-router.get('/my', protect, questionController.getMyQuestions);
+router.get('/my', optionalAuth, questionController.getMyQuestions);
 
 router.get('/:id', optionalAuth, questionController.getQuestionById);
 
 router.post(
   '/',
-  protect,
+  optionalAuth,
   [
     body('text')
       .trim()

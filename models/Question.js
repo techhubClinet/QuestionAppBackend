@@ -22,7 +22,12 @@ const questionSchema = new mongoose.Schema({
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true
+    required: false
+  },
+  createdByGuestId: {
+    type: String,
+    trim: true,
+    index: true
   },
   approved: {
     type: Boolean,
