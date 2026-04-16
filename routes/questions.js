@@ -8,7 +8,7 @@ router.get('/random', optionalAuth, questionController.getRandomQuestions);
 
 router.get('/search', optionalAuth, questionController.searchQuestions);
 
-router.get('/my', optionalAuth, questionController.getMyQuestions);
+router.get('/my', protect, questionController.getMyQuestions);
 
 router.get('/:id', optionalAuth, questionController.getQuestionById);
 

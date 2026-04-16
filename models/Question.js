@@ -24,11 +24,6 @@ const questionSchema = new mongoose.Schema({
     ref: 'User',
     required: false
   },
-  createdByGuestId: {
-    type: String,
-    trim: true,
-    index: true
-  },
   approved: {
     type: Boolean,
     default: false
