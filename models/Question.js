@@ -53,4 +53,7 @@ questionSchema.virtual('isAccepted').get(function() {
 questionSchema.set('toJSON', { virtuals: true });
 questionSchema.set('toObject', { virtuals: true });
 
+/** Speeds up /questions/random $match before $sample */
+questionSchema.index({ approved: 1, is18Plus: 1 });
+
 module.exports = mongoose.model('Question', questionSchema);
