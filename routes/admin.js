@@ -7,6 +7,8 @@ router.use(protect, adminOnly);
 
 router.get('/questions', adminController.getAllQuestions);
 
+router.post('/questions', adminController.createQuestionAdmin);
+
 router.get('/questions/pending', adminController.getPendingQuestions);
 
 router.post('/questions/:id/approve', adminController.approveQuestion);

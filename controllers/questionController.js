@@ -177,18 +177,25 @@ exports.updateQuestion = async (req, res) => {
       return res.status(404).json({ message: 'Question not found' });
     }
 
-    if (question.createdBy.toString() !== req.user._id.toString() && !req.user.isAdmin) {
+    const isAdmin = req.user.isAdmin;
+    const isOwner =
+      question.createdBy &&
+      question.createdBy.toString() === req.user._id.toString();
+
+    if (!isAdmin && !isOwner) {
       return res.status(403).json({ message: 'Not authorized to edit this question' });
     }
 
     const { text } = req.body;
 
-    if (text) question.text = text.trim();
+    if (text !== undefined && text !== null && String(text).trim() !== '') {
+      question.text = String(text).trim();
+    }
     if (req.body.is18Plus !== undefined) {
       question.is18Plus = parseIs18Plus(req.body.is18Plus);
     }
 
-    if (!req.user.isAdmin) {
+    if (!isAdmin && isOwner) {
       question.approved = false;
     }
 
