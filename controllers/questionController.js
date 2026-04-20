@@ -16,43 +16,56 @@ exports.getRandomQuestions = async (req, res) => {
     const limit = parseInt(req.query.limit) || 3;
     const include18Plus = req.query.include18Plus === 'true';
 
-    const filter = { approved: true };
+    const baseFilter = { approved: true };
     if (!include18Plus) {
-      filter.is18Plus = false;
+      baseFilter.is18Plus = false;
     }
 
-    // When user is logged in, exclude questions they already voted on
-    if (req.user) {
-      const votedQuestionIds = await Vote.find({ userId: req.user._id })
-        .distinct('questionId');
-      if (votedQuestionIds.length > 0) {
-        filter._id = { $nin: votedQuestionIds };
-      }
-    }
-
-    const questions = await Question.aggregate([
-      { $match: filter },
-      { $sample: { size: limit } },
-      {
-        $addFields: {
-          acceptPercentage: {
-            $round: [
-              { $multiply: [{ $divide: ['$acceptVotes', { $add: ['$acceptVotes', '$rejectVotes'] }] }, 100] }
-            ]
-          },
-          rejectPercentage: {
-            $round: [
-              { $multiply: [{ $divide: ['$rejectVotes', { $add: ['$acceptVotes', '$rejectVotes'] }] }, 100] }
-            ]
+    const runSample = async (matchFilter) => {
+      return Question.aggregate([
+        { $match: matchFilter },
+        { $sample: { size: limit } },
+        {
+          $addFields: {
+            acceptPercentage: {
+              $round: [
+                { $multiply: [{ $divide: ['$acceptVotes', { $add: ['$acceptVotes', '$rejectVotes'] }] }, 100] }
+              ]
+            },
+            rejectPercentage: {
+              $round: [
+                { $multiply: [{ $divide: ['$rejectVotes', { $add: ['$acceptVotes', '$rejectVotes'] }] }, 100] }
+              ]
+            }
+          }
+        },
+        {
+          $addFields: {
+            isAccepted: { $gte: ['$acceptPercentage', 50] }
           }
         }
-      },
-      {
-        $addFields: {
-          isAccepted: { $gte: ['$acceptPercentage', 50] }
-        }
-      }
-    ]);
+      ]);
+    };
+
+    let votedQuestionIds = [];
+    if (req.user) {
+      votedQuestionIds = await Vote.find({ userId: req.user._id }).distinct('questionId');
+    }
+
+    const unseenFilter = { ...baseFilter };
+    if (votedQuestionIds.length > 0) {
+      unseenFilter._id = { $nin: votedQuestionIds };
+    }
+
+    let questions = await runSample(unseenFilter);
+
+    /**
+     * Fallback: if a logged-in user has voted on all matching questions,
+     * still return random approved questions instead of empty state.
+     */
+    if (questions.length === 0 && req.user) {
+      questions = await runSample(baseFilter);
+    }
 
     res.json(questions);
   } catch (error) {
