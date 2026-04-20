@@ -54,11 +54,26 @@ exports.createOrUpdateVote = async (req, res) => {
     });
 
     if (existingVote) {
+      const previousVoteType = existingVote.voteType;
+      // Allow changing vote on the same question (accept <-> reject).
+      if (existingVote.voteType !== voteType) {
+        if (existingVote.voteType === 'accept') {
+          question.acceptVotes = Math.max(0, question.acceptVotes - 1);
+          question.rejectVotes += 1;
+        } else {
+          question.rejectVotes = Math.max(0, question.rejectVotes - 1);
+          question.acceptVotes += 1;
+        }
+        existingVote.voteType = voteType;
+        existingVote.updatedAt = new Date();
+        await Promise.all([question.save(), existingVote.save()]);
+      }
+
       const total = question.acceptVotes + question.rejectVotes;
       const acceptPercentage = Math.round((question.acceptVotes / total) * 100);
       const rejectPercentage = Math.round((question.rejectVotes / total) * 100);
-      return res.status(400).json({
-        message: 'You have already voted on this question',
+      return res.status(200).json({
+        message: previousVoteType === voteType ? 'Vote recorded' : 'Vote updated',
         vote: existingVote,
         question: {
           ...question.toJSON(),
