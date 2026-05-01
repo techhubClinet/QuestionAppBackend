@@ -133,7 +133,11 @@ exports.createQuestion = async (req, res) => {
 
 exports.getMyQuestions = async (req, res) => {
   try {
-    const questions = await Question.find({ createdBy: req.user._id }).sort({ createdAt: -1 });
+    const includePending = req.query.includePending === 'true' && req.user?.isAdmin;
+    const filter = includePending
+      ? { createdBy: req.user._id }
+      : { createdBy: req.user._id, approved: true };
+    const questions = await Question.find(filter).sort({ createdAt: -1 });
 
     res.json(questions);
   } catch (error) {
