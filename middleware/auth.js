@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { isEmailAllowedAdmin } = require('../utils/adminEmails');
 
 const protect = async (req, res, next) => {
   try {
@@ -46,7 +47,8 @@ const optionalAuth = async (req, res, next) => {
 };
 
 const adminOnly = (req, res, next) => {
-  if (req.user && req.user.isAdmin) {
+  const email = req.user?.email || '';
+  if (req.user && isEmailAllowedAdmin(email)) {
     next();
   } else {
     res.status(403).json({ message: 'Not authorized as admin' });

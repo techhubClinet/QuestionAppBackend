@@ -11,18 +11,20 @@ const mongoose = require('mongoose');
 const User = require('../models/User');
 const Question = require('../models/Question');
 const seedQuestions = require('../data/seedQuestions.json');
+const { getAllowedAdminEmails } = require('../utils/adminEmails');
 
 function escapeRegex(str) {
   return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 async function resolveAuthorId() {
+  for (const email of getAllowedAdminEmails()) {
+    const u = await User.findOne({ email });
+    if (u) return u._id;
+  }
+
   const admin = await User.findOne({ isAdmin: true });
   if (admin) return admin._id;
-
-  const adminEmail = (process.env.ADMIN_EMAIL || 'admin1234@gmail.com').trim().toLowerCase();
-  const byEnv = await User.findOne({ email: adminEmail });
-  if (byEnv) return byEnv._id;
 
   const any = await User.findOne().sort({ createdAt: 1 });
   if (any) return any._id;

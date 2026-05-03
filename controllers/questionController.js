@@ -1,6 +1,7 @@
 const { validationResult } = require('express-validator');
 const Question = require('../models/Question');
 const Vote = require('../models/Vote');
+const { isEmailAllowedAdmin } = require('../utils/adminEmails');
 
 function escapeRegex(str) {
   return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -133,7 +134,8 @@ exports.createQuestion = async (req, res) => {
 
 exports.getMyQuestions = async (req, res) => {
   try {
-    const includePending = req.query.includePending === 'true' && req.user?.isAdmin;
+    const includePending =
+      req.query.includePending === 'true' && req.user && isEmailAllowedAdmin(req.user.email);
     const filter = includePending
       ? { createdBy: req.user._id }
       : { createdBy: req.user._id, approved: true };
@@ -155,7 +157,7 @@ exports.getQuestionById = async (req, res) => {
 
     const isOwner =
       req.user && question.createdBy && question.createdBy.toString() === req.user._id.toString();
-    const isAdminUser = req.user && req.user.isAdmin;
+    const isAdminUser = req.user && isEmailAllowedAdmin(req.user.email);
 
     if (!question.approved && !isOwner && !isAdminUser) {
       return res.status(404).json({ message: 'Question not found' });
@@ -194,7 +196,7 @@ exports.updateQuestion = async (req, res) => {
       return res.status(404).json({ message: 'Question not found' });
     }
 
-    const isAdmin = req.user.isAdmin;
+    const isAdmin = isEmailAllowedAdmin(req.user.email);
     const isOwner =
       question.createdBy &&
       question.createdBy.toString() === req.user._id.toString();

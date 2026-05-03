@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const { validationResult } = require('express-validator');
 const { OAuth2Client } = require('google-auth-library');
 const User = require('../models/User');
+const { syncUserAdminRole } = require('../utils/adminEmails');
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -55,6 +56,7 @@ exports.register = async (req, res) => {
     }
 
     const user = await User.create({ email: rawEmail, password });
+    await syncUserAdminRole(user, rawEmail);
 
     const token = generateToken(user._id);
 
@@ -89,12 +91,7 @@ exports.login = async (req, res) => {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
-    const adminEmail = (process.env.ADMIN_EMAIL || 'admin1234@gmail.com').trim().toLowerCase();
-    const adminPassword = process.env.ADMIN_PASSWORD || 'admin1234';
-    if (rawEmail === adminEmail && password === adminPassword) {
-      user.isAdmin = true;
-      await user.save();
-    }
+    await syncUserAdminRole(user, rawEmail);
 
     const token = generateToken(user._id);
 
@@ -161,6 +158,8 @@ exports.googleLogin = async (req, res) => {
       await user.save();
     }
 
+    await syncUserAdminRole(user, normalizedEmail);
+
     const token = generateToken(user._id);
     res.json({
       _id: user._id,
@@ -175,7 +174,12 @@ exports.googleLogin = async (req, res) => {
 
 exports.getMe = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).select('-password');
+    let user = await User.findById(req.user._id).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    await syncUserAdminRole(user, user.email);
+    user = await User.findById(req.user._id).select('-password');
     res.json(user);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
