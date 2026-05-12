@@ -1,5 +1,7 @@
 const Question = require('../models/Question');
 const Vote = require('../models/Vote');
+const NotificationCampaign = require('../models/NotificationCampaign');
+const { sendCampaignPush } = require('../services/notificationCampaignService');
 
 function parseIs18Plus(value) {
   if (value === true || value === 'true' || value === 1 || value === '1') return true;
@@ -150,6 +152,75 @@ exports.createQuestionAdmin = async (req, res) => {
     q.poolNo = q.rejectVotes;
 
     res.status(201).json(q);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+exports.getNotificationCampaign = async (req, res) => {
+  try {
+    const campaign = await NotificationCampaign.findOne().sort({ updatedAt: -1 });
+    if (!campaign) {
+      return res.json({
+        message: '',
+        frequency: 'weekly',
+        isEnabled: false
+      });
+    }
+    res.json(campaign);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+exports.upsertNotificationCampaign = async (req, res) => {
+  try {
+    const message = String(req.body.message || '').trim();
+    const frequency = String(req.body.frequency || '').trim();
+    const isEnabled = req.body.isEnabled === true || req.body.isEnabled === 'true';
+
+    if (!['daily', 'weekly', 'monthly'].includes(frequency)) {
+      return res.status(400).json({ message: 'Frequency must be daily, weekly, or monthly' });
+    }
+    if (!message || message.length < 2 || message.length > 280) {
+      return res.status(400).json({ message: 'Message must be between 2 and 280 characters' });
+    }
+
+    let campaign = await NotificationCampaign.findOne().sort({ updatedAt: -1 });
+    if (!campaign) {
+      campaign = await NotificationCampaign.create({
+        message,
+        frequency,
+        isEnabled,
+        updatedBy: req.user._id
+      });
+    } else {
+      campaign.message = message;
+      campaign.frequency = frequency;
+      campaign.isEnabled = isEnabled;
+      campaign.updatedBy = req.user._id;
+      await campaign.save();
+    }
+
+    res.json(campaign);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+exports.sendNotificationCampaignNow = async (req, res) => {
+  try {
+    const campaign = await NotificationCampaign.findOne({ isEnabled: true }).sort({ updatedAt: -1 });
+    if (!campaign) {
+      return res.status(404).json({ message: 'No enabled campaign found' });
+    }
+    const result = await sendCampaignPush(campaign, new Date());
+    res.json({
+      message: `Push sent to ${result.sent} devices`,
+      sent: result.sent,
+      invalidated: result.invalidated,
+      notificationId: result.notification?._id
+    });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }

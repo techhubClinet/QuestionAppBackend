@@ -1,6 +1,10 @@
 {
   "version": 2,
+  "crons": [
+    { "path": "/api/cron-notifications", "schedule": "0 * * * *" }
+  ],
   "rewrites": [
+    { "source": "/api/cron-notifications", "destination": "/api/cron-notifications" },
     { "source": "/(.*)", "destination": "/api" }
   ]
 }

@@ -6,6 +6,8 @@ const authRoutes = require('./routes/auth');
 const questionRoutes = require('./routes/questions');
 const voteRoutes = require('./routes/votes');
 const adminRoutes = require('./routes/admin');
+const notificationRoutes = require('./routes/notifications');
+const deviceRoutes = require('./routes/devices');
 
 const app = express();
 
@@ -16,6 +18,8 @@ app.use('/auth', authRoutes);
 app.use('/questions', questionRoutes);
 app.use('/votes', voteRoutes);
 app.use('/admin', adminRoutes);
+app.use('/notifications', notificationRoutes);
+app.use('/devices', deviceRoutes);
 
 app.get('/', (req, res) => {
   res.json({ message: 'Mamekubal API is running' });
