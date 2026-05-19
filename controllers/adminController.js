@@ -210,10 +210,37 @@ exports.upsertNotificationCampaign = async (req, res) => {
 
 exports.sendNotificationCampaignNow = async (req, res) => {
   try {
-    const campaign = await NotificationCampaign.findOne({ isEnabled: true }).sort({ updatedAt: -1 });
-    if (!campaign) {
-      return res.status(404).json({ message: 'No enabled campaign found' });
+    const message = String(req.body.message || '').trim();
+    let campaign = await NotificationCampaign.findOne().sort({ updatedAt: -1 });
+
+    if (message) {
+      const frequency = String(req.body.frequency || campaign?.frequency || 'daily').trim();
+      if (!['daily', 'weekly', 'monthly'].includes(frequency)) {
+        return res.status(400).json({ message: 'Frequency must be daily, weekly, or monthly' });
+      }
+      if (message.length < 2 || message.length > 280) {
+        return res.status(400).json({ message: 'Message must be between 2 and 280 characters' });
+      }
+      if (!campaign) {
+        campaign = await NotificationCampaign.create({
+          message,
+          frequency,
+          isEnabled: true,
+          updatedBy: req.user._id
+        });
+      } else {
+        campaign.message = message;
+        campaign.frequency = frequency;
+        campaign.isEnabled = true;
+        campaign.updatedBy = req.user._id;
+        await campaign.save();
+      }
     }
+
+    if (!campaign) {
+      return res.status(404).json({ message: 'No notification campaign found. Save a message first.' });
+    }
+
     const result = await sendCampaignPush(campaign, new Date());
     res.json({
       message: `Push sent to ${result.sent} devices`,
