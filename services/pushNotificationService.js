@@ -3,7 +3,10 @@ const DeviceToken = require('../models/DeviceToken');
 const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
 
 function isExpoToken(token) {
-  return typeof token === 'string' && /^ExponentPushToken\[.+\]$/.test(token.trim());
+  if (typeof token !== 'string') return false;
+  const trimmed = token.trim();
+  // SDK 49+ uses ExpoPushToken[...]; older builds used ExponentPushToken[...]
+  return /^Expo(nent)?PushToken\[[^\]]+\]$/.test(trimmed);
 }
 
 async function sendPushToAllDevices({ title, body, data = {} }) {
