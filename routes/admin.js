@@ -15,6 +15,8 @@ router.post('/questions/:id/approve', adminController.approveQuestion);
 
 router.delete('/questions/:id', adminController.deleteQuestion);
 
+router.get('/push-devices', adminController.getPushDeviceStats);
+
 router.get('/notification-campaign', adminController.getNotificationCampaign);
 router.put('/notification-campaign', adminController.upsertNotificationCampaign);
 router.post('/notification-campaign/send-now', adminController.sendNotificationCampaignNow);

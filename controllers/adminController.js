@@ -1,6 +1,7 @@
 const Question = require('../models/Question');
 const Vote = require('../models/Vote');
 const NotificationCampaign = require('../models/NotificationCampaign');
+const DeviceToken = require('../models/DeviceToken');
 const { sendCampaignPush } = require('../services/notificationCampaignService');
 
 function parseIs18Plus(value) {
@@ -203,6 +204,18 @@ exports.upsertNotificationCampaign = async (req, res) => {
     }
 
     res.json(campaign);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+exports.getPushDeviceStats = async (req, res) => {
+  try {
+    const [active, total] = await Promise.all([
+      DeviceToken.countDocuments({ isActive: true }),
+      DeviceToken.countDocuments({})
+    ]);
+    res.json({ active, total });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
